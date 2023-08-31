@@ -43,14 +43,42 @@ function searchProducts(grouppedProducts, selectedUserId, searchedName) {
   ));
 }
 
+function filterByCategory(grouppedProducts,
+  selectedUserId,
+  searchedName,
+  selectedCategories) {
+  const filteredProducts = searchProducts(grouppedProducts,
+    selectedUserId,
+    searchedName);
+
+  if (selectedCategories.length === 0) {
+    return filteredProducts;
+  }
+
+  return filteredProducts.filter(product => (
+    selectedCategories.includes(product.category.title)
+  ));
+}
+
+function removeSelectedCategoryHandler(selectedCategories, category) {
+  const index = selectedCategories.indexOf(category);
+  const inputCopy = [...selectedCategories];
+
+  inputCopy.splice(index, 1);
+
+  return inputCopy;
+}
+
 function filterProducts(
   grouppedProducts,
   selectedUserId,
   searchedName,
+  selectedCategories,
 ) {
-  const filteredProducts = searchProducts(grouppedProducts,
+  const filteredProducts = filterByCategory(grouppedProducts,
     selectedUserId,
-    searchedName);
+    searchedName,
+    selectedCategories);
 
   return filteredProducts;
 }
@@ -58,8 +86,12 @@ function filterProducts(
 export const App = () => {
   const [selectedUserId, setSelectedUserId] = useState(SHOW_ALL_PRODUCTS);
   const [searchedName, setSearchedName] = useState(SHOW_ALL_PRODUCTS);
+  const [selectedCategories, setSelectedCategories] = useState([]);
   const filteredProducts = filterProducts(products,
-    selectedUserId, searchedName);
+    selectedUserId, searchedName, selectedCategories);
+
+  // eslint-disable-next-line no-console
+  console.log(selectedCategories);
 
   return (
     <div className="section">
@@ -132,16 +164,35 @@ export const App = () => {
               <a
                 href="#/"
                 data-cy="AllCategories"
-                className="button is-success mr-6 is-outlined"
+                className={classnames({
+                  'button is-success mr-6': true,
+                  'is-outlined': selectedCategories.length > 0,
+                })}
+                onClick={() => setSelectedCategories([])}
               >
                 All
               </a>
               {categoriesFromServer.map(category => (
                 <a
                   data-cy="Category"
-                  className="button mr-2 my-1"
+                  className={classnames({
+                    'button mr-2 my-1': true,
+                    'is-info': selectedCategories.includes(category.title),
+                  })}
                   href="#/"
                   key={category.id}
+                  onClick={() => {
+                    if (selectedCategories.includes(category.title)) {
+                      setSelectedCategories(
+                        removeSelectedCategoryHandler(selectedCategories,
+                          category.title),
+                      );
+
+                      return;
+                    }
+
+                    setSelectedCategories(prev => [...prev, category.title]);
+                  }}
                 >
                   {category.title}
                 </a>
@@ -156,6 +207,7 @@ export const App = () => {
                 onClick={() => {
                   setSearchedName(SHOW_ALL_PRODUCTS);
                   setSelectedUserId(SHOW_ALL_PRODUCTS);
+                  setSelectedCategories([]);
                 }}
               >
                 Reset all filters
